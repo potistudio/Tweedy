@@ -6,7 +6,6 @@
  * DB への読み書きは全て background へのメッセージ経由で行う。
  */
 (() => {
-	"use strict";
 	if (window.__tvaultContent) return;
 	window.__tvaultContent = true;
 
@@ -500,6 +499,9 @@
 		}
 
 		btn.addEventListener("click", onButtonClick);
+		btn.addEventListener("pointerdown", onButtonPointerDown);
+		btn.addEventListener("contextmenu", onButtonContextMenu);
+		btn.addEventListener("touchmove", onButtonTouchMove, { passive: false });
 		if (!buttons.has(id)) buttons.set(id, new Set());
 		buttons.get(id).add(btn);
 		setButtonState(btn, stateOf(id));
@@ -540,13 +542,9 @@
 
 	/* ---------- 保存処理 ---------- */
 
-	async function onButtonClick(e) {
-		// article のクリックでツイート詳細へ遷移するため、ページ側へのイベント伝播を止める。
-		e.preventDefault();
-		e.stopPropagation();
-		const btn = e.currentTarget;
+	// 挿入時にキャッシュが無く引用先の ID を採用していた場合に備え、操作時点のキャッシュで ID を再判定する。
+	function currentId(btn) {
 		let id = btn.dataset.id;
-		// 挿入時にキャッシュが無く引用先の ID を採用していた場合に備え、クリック時点のキャッシュで ID を再判定する。
 		const article = btn.closest("article");
 		const group = btn.closest('[role="group"]');
 		if (article && group && !saving.has(id) && !popover.isOpenFor(btn)) {
@@ -556,8 +554,24 @@
 				id = fresh;
 			}
 		}
+		return id;
+	}
+
+	async function onButtonClick(e) {
+		// article のクリックでツイート詳細へ遷移するため、ページ側へのイベント伝播を止める。
+		e.preventDefault();
+		e.stopPropagation();
+		const btn = e.currentTarget;
+		// 長押しでメニューを開いた直後に届くクリックは、単押しとして扱わない。
+		if ((suppressClick.get(btn) || 0) > performance.now()) return;
+		const id = currentId(btn);
+		if (goo.isOpenFor(btn)) {
+			goo.close(e.detail === 0);
+			return;
+		}
 		// 保存処理中のクリックでポップオーバーを閉じると完了・失敗の表示先が無くなるため、開くのみとする。
 		if (saving.has(id)) {
+			goo.dismiss(btn);
 			if (!popover.isOpenFor(btn)) popover.open(btn, id);
 			return;
 		}
@@ -565,33 +579,218 @@
 			const failed = popover.isFailed();
 			popover.close();
 			// 保存失敗の表示中にボタンを押した場合は保存を再試行する。
-			if (failed && !saving.has(id) && !status.get(id)) await save(id, btn.closest("article"), btn);
+			if (failed && !saving.has(id) && !status.get(id)) await quickSave(btn, id);
 			return;
 		}
-		if (status.get(id) || saving.has(id)) {
+		if (status.get(id)) {
 			popover.open(btn, id);
 			return;
 		}
-		await save(id, btn.closest("article"), btn);
+		await quickSave(btn, id);
 	}
 
-	async function save(id, article, btn) {
+	/* ---------- 長押し・右クリックで Goo メニュー (保存先フォルダの選択) ---------- */
+
+	const goo = globalThis.TVaultGoo;
+	const LONG_PRESS_MS = 400;
+	const HOLD_SLOP = 8; // 長押しの判定中にこれ以上動いたらスクロールなどとみなして取り消す (px)
+	const suppressClick = new WeakMap();
+	let hold = null;
+
+	function onButtonPointerDown(e) {
+		if (e.button !== 0 || !e.isPrimary) return;
+		const btn = e.currentTarget;
+		cancelHold();
+		const h = { btn, pointerId: e.pointerId, touch: e.pointerType === "touch", x: e.clientX, y: e.clientY };
+		h.fired = false;
+		h.timer = setTimeout(() => fireHold(h), LONG_PRESS_MS);
+		hold = h;
+		window.addEventListener("pointermove", onHoldMove, true);
+		window.addEventListener("pointerup", onHoldEnd, true);
+		window.addEventListener("pointercancel", onHoldEnd, true);
+	}
+
+	// 長押しが成立したとき、または押したまま右へ動かしたときに泡を出す。
+	function fireHold(h) {
+		if (hold !== h || h.fired || !h.btn.isConnected) return;
+		clearTimeout(h.timer);
+		h.fired = true;
+		if (h.touch) navigator.vibrate?.(10);
+		openFolderMenu(h.btn, currentId(h.btn), false);
+	}
+
+	// 押したまま右へ動かしたか (右向きの移動が上下の移動より大きい)。
+	function draggedRight(h, x, y) {
+		const dx = x - h.x;
+		return dx > HOLD_SLOP && dx > Math.abs(y - h.y);
+	}
+
+	function onHoldMove(e) {
+		if (!hold || e.pointerId !== hold.pointerId) return;
+		if (!hold.fired) {
+			// 右へ動かした瞬間に、長押しを待たずに泡を出す。それ以外の向きはスクロールなどとみなして取り消す。
+			if (draggedRight(hold, e.clientX, e.clientY)) fireHold(hold);
+			else if (Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > HOLD_SLOP) cancelHold();
+		}
+		if (hold?.fired) goo.hoverAt(hold.btn, e.clientX, e.clientY);
+	}
+
+	// 長押しで開いた後、押したまま泡の上へ動かして離すと、そのフォルダを選べる。
+	function onHoldEnd(e) {
+		if (!hold || e.pointerId !== hold.pointerId) return;
+		const h = hold;
+		cancelHold();
+		if (!h.fired) return;
+		suppressClick.set(h.btn, performance.now() + 500);
+		if (e.type === "pointerup") goo.releaseAt(h.btn, e.clientX, e.clientY);
+	}
+
+	function cancelHold() {
+		if (!hold) return;
+		clearTimeout(hold.timer);
+		hold = null;
+		window.removeEventListener("pointermove", onHoldMove, true);
+		window.removeEventListener("pointerup", onHoldEnd, true);
+		window.removeEventListener("pointercancel", onHoldEnd, true);
+	}
+
+	/*
+	 * タッチでは指を動かすとページのスクロールが始まり、pointercancel で長押しの操作が打ち切られる。
+	 * 長押しが成立した後、または右へ動かした場合に限りスクロールを止め、指を泡の上まで滑らせられるようにする。
+	 * それ以外は止めないため、保存ボタンの上から始めた縦のスクロールはそのまま動く。
+	 */
+	function onButtonTouchMove(e) {
+		const h = hold;
+		if (!h || h.btn !== e.currentTarget) return;
+		const t = e.touches[0];
+		if (!h.fired && t && draggedRight(h, t.clientX, t.clientY)) fireHold(h);
+		if (h.fired) e.preventDefault();
+	}
+
+	// 右クリックやメニューキーでも開く。タッチの長押しで届く contextmenu は長押しの処理に任せる。
+	function onButtonContextMenu(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		const btn = e.currentTarget;
+		if (hold?.fired || goo.isOpenFor(btn)) return;
+		cancelHold();
+		openFolderMenu(btn, currentId(btn), true);
+	}
+
+	let foldersLoading = null;
+
+	// 取得できない場合は未分類のみとし、保存時のエラーで理由を示す。同じボタンで取得中なら null を返す。
+	async function loadFolders(btn) {
+		if (foldersLoading === btn) return null;
+		foldersLoading = btn;
+		let folders = [];
+		let lastFolderId = "default";
+		try {
+			[folders, { lastFolderId }] = await Promise.all([
+				bg("listFolders"),
+				chrome.storage.local.get({ lastFolderId: "default" }),
+			]);
+		} catch {
+			/* 下で未分類を補う */
+		} finally {
+			if (foldersLoading === btn) foldersLoading = null;
+		}
+		if (!folders.length) folders = [{ id: "default", name: "未分類" }];
+		return { folders, lastFolderId };
+	}
+
+	// 取得を待つ間にボタンが外れた・別ツイートに再利用された・保存が始まった場合は続けない。
+	function stillValid(btn, id) {
+		return btn.isConnected && btn.dataset.id === id && !saving.has(id);
+	}
+
+	// トーストを押すと、続けてタグなどを編集できるようポップオーバーを開く。
+	function toastClick(btn, id) {
+		return () => {
+			if (btn.isConnected) popover.open(btn, id);
+		};
+	}
+
+	// 単押し: 前回使ったフォルダへすぐ保存し、ボタンをトーストに変形させる。
+	async function quickSave(btn, id) {
+		const data = await loadFolders(btn);
+		if (!data || !stillValid(btn, id) || status.get(id)) return;
+		const folder = data.folders.find((f) => f.id === data.lastFolderId) || data.folders[0];
+		popover.close();
+		goo.toast(btn, { onToastClick: toastClick(btn, id) });
+		save(id, btn.closest("article"), btn, folder, data.folders);
+	}
+
+	// 長押し: 登録フォルダを泡として横に広げる。未保存なら選んだフォルダへ保存し、保存済みならそのフォルダへ移動する。
+	async function openFolderMenu(btn, id, byKeyboard) {
+		if (saving.has(id)) return;
+		const data = await loadFolders(btn);
+		if (!data || !stillValid(btn, id) || goo.isOpenFor(btn)) return;
+		const { folders, lastFolderId } = data;
+		const saved = status.get(id);
+		popover.close();
+		goo.open(btn, {
+			folders,
+			currentId: saved ? saved.folderId : lastFolderId,
+			verb: saved ? "へ移動" : "に保存",
+			focus: byKeyboard,
+			onPick(folder) {
+				chrome.storage.local.set({ lastFolderId: folder.id }).catch(() => {});
+				if (status.get(id)) moveTo(id, btn, folder);
+				else if (!saving.has(id)) save(id, btn.closest("article"), btn, folder, folders);
+			},
+			onToastClick: toastClick(btn, id),
+		});
+	}
+
+	async function moveTo(id, btn, folder) {
+		const prev = status.get(id);
+		if (prev.folderId === folder.id) {
+			goo.setToast(btn, { state: "done", name: folder.name, text: "に保存済みです" });
+			return;
+		}
+		goo.setToast(btn, { state: "busy", name: folder.name, text: "へ移動中…" });
+		// ポップオーバーでの編集と同じく、最後に送った要求の応答のみを反映する。
+		const seq = (updateSeq.get(id) || 0) + 1;
+		updateSeq.set(id, seq);
+		setStatus(id, { folderId: folder.id, tags: [...prev.tags] });
+		try {
+			const res = await bg("updateTweet", { id, folderId: folder.id });
+			if (updateSeq.get(id) !== seq) return;
+			setStatus(id, { folderId: res.folderId, tags: res.tags });
+			goo.setToast(btn, { state: "done", name: folder.name, text: "へ移動しました" });
+		} catch {
+			if (updateSeq.get(id) !== seq) return;
+			setStatus(id, prev);
+			requestStatus(id);
+			goo.setToast(btn, { state: "error", name: folder.name, text: "へ移動できませんでした" });
+		}
+	}
+
+	function savedToast(saved, folders) {
+		const name = folders.find((f) => f.id === saved.folderId)?.name;
+		if (saved.existed) return { state: "done", name, text: name ? "に保存済みです" : "既に保存済みです" };
+		if (saved.mediaFailed)
+			return { state: "done", name, text: `に保存 (メディア ${saved.mediaFailed} 件は未取得)` };
+		return { state: "done", name, text: name ? "に保存しました" : "保存しました" };
+	}
+
+	async function save(id, article, btn, folder, folders) {
 		saving.add(id);
 		paint(id);
 		let saved = null;
 		let failure = null;
 		try {
-			const { lastFolderId } = await chrome.storage.local.get({ lastFolderId: "default" });
 			drafts.set(id, {
-				folderId: lastFolderId,
+				folderId: folder.id,
 				tags: [],
 				dirty: false,
 				folderChanged: false,
 				tagsChanged: false,
 			});
-			popover.open(btn, id);
+			goo.setToast(btn, { state: "busy", name: folder.name, text: "に保存中…" });
 			const tweet = await resolveTweet(id, article);
-			saved = await bg("saveTweet", { tweet, folderId: lastFolderId, tags: [] });
+			saved = await bg("saveTweet", { tweet, folderId: folder.id, tags: [] });
 			// 既に保存済みだった場合、draft は既存のフォルダ・タグを知らない状態で編集されているため破棄し、
 			// ポップオーバーには DB の値を表示する。
 			// 新規保存の場合は draft に蓄積された変更を、dirty が解消されるまで変更項目のみ繰り返し反映する。
@@ -612,10 +811,18 @@
 		}
 		if (saved) {
 			setStatus(id, { folderId: saved.folderId, tags: saved.tags });
-			// saveTweet 成功後の updateTweet で失敗した場合、保存済み表示に加えて未反映である旨を表示する。
+			// saveTweet 成功後の updateTweet で失敗した場合は、トーストではなくポップオーバーで未反映である旨を表示する。
+			if (failure && !popover.isOpenFor(btn)) {
+				goo.dismiss(btn);
+				if (btn.isConnected) popover.open(btn, id);
+			}
+			if (!failure) goo.setToast(btn, savedToast(saved, folders));
 			popover.onSaved(id, saved, failure);
 		} else {
 			paint(id);
+			// 失敗はトーストを閉じ、ポップオーバーで理由と再試行の方法を示す。
+			goo.dismiss(btn);
+			if (btn.isConnected && !popover.isOpenFor(btn)) popover.open(btn, id);
 			popover.onError(id, failure || new Error("保存できませんでした"));
 		}
 	}

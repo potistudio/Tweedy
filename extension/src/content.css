@@ -18,6 +18,10 @@
 	border-radius: 9999px;
 	color: rgb(113, 118, 123);
 	cursor: pointer;
+	/* 長押しでフォルダを選ぶため、iOS の長押しメニューや文字選択を出さない */
+	-webkit-touch-callout: none;
+	user-select: none;
+	-webkit-user-select: none;
 	transition:
 		background-color 0.15s,
 		color 0.15s;
