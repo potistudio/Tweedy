@@ -1,0 +1,52 @@
+/* ツイートのアクションバーに挿入する保存ボタン */
+.tvault-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.tvault-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0 2px;
+  border-radius: 9999px;
+  color: rgb(113, 118, 123);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tvault-btn:hover,
+.tvault-btn:focus-visible {
+  background-color: rgba(29, 155, 240, 0.1);
+  color: rgb(29, 155, 240);
+}
+
+.tvault-btn:focus-visible {
+  outline: 2px solid rgb(29, 155, 240);
+  outline-offset: 1px;
+}
+
+.tvault-btn svg {
+  width: 19px;
+  height: 19px;
+  pointer-events: none;
+}
+
+.tvault-btn[data-state="saved"] {
+  color: rgb(29, 155, 240);
+}
+
+.tvault-btn[data-state="saving"] svg {
+  animation: tvault-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes tvault-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

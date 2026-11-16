@@ -1,0 +1,902 @@
+{
+ "photo": {
+  "__typename": "Tweet",
+  "core": {
+   "user_results": {
+    "result": {
+     "__typename": "User",
+     "avatar": {
+      "image_url": "https://pbs.twimg.com/profile_images/2068802435938689025/Iqb-7nQc_normal.jpg"
+     },
+     "core": {
+      "name": "𝕯𝖊𝖗𝖇𝖊𝖉𝖊𝖗",
+      "screen_name": "derbederdusler"
+     }
+    }
+   }
+  },
+  "details": {
+   "cashtag_entities": [],
+   "created_at_ms": 1711047760000,
+   "display_text_range": [
+    5,
+    5
+   ],
+   "full_text": "@jack https://t.co/j0vbZrENcJ",
+   "hashtag_entities": [],
+   "smarttags": []
+  },
+  "legacy": {
+   "entities": {
+    "media": [
+     {
+      "expanded_url": "https://x.com/derbederdusler/status/1770888775830262034/photo/1"
+     }
+    ]
+   },
+   "lang": "qme",
+   "possibly_sensitive": false
+  },
+  "media_entities2": [
+   {
+    "expanded_url": "https://x.com/derbederdusler/status/1770888775830262034/photo/1",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "features": {},
+    "id_str": "1770888772571316224",
+    "indices": [
+     6,
+     29
+    ],
+    "media_url_https": "https://pbs.twimg.com/media/GJN19MHXQAAeNDq.jpg",
+    "original_info": {
+     "height": 786,
+     "width": 1080
+    },
+    "type": "photo"
+   }
+  ],
+  "rest_id": "1770888775830262034",
+  "url_entities": []
+ },
+ "video": {
+  "__typename": "Tweet",
+  "core": {
+   "user_results": {
+    "result": {
+     "__typename": "User",
+     "avatar": {
+      "image_url": "https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg"
+     },
+     "core": {
+      "name": "Elon Musk",
+      "screen_name": "elonmusk"
+     }
+    }
+   }
+  },
+  "details": {
+   "cashtag_entities": [],
+   "created_at_ms": 1794702788000,
+   "display_text_range": [
+    0,
+    39
+   ],
+   "full_text": "Some phone videos I took from the tower https://t.co/kxiSkIvoHQ",
+   "hashtag_entities": [],
+   "smarttags": []
+  },
+  "legacy": {
+   "entities": {
+    "media": [
+     {
+      "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/1"
+     },
+     {
+      "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/2"
+     }
+    ]
+   },
+   "lang": "en",
+   "possibly_sensitive": false
+  },
+  "media_entities2": [
+   {
+    "additional_media_info": {
+     "monetizable": false
+    },
+    "allow_download_status": {
+     "allow_download": true
+    },
+    "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/1",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "id_str": "2121763328888291328",
+    "indices": [
+     40,
+     63
+    ],
+    "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121763328888291328/img/Z16sUanKjIFhZ3D9.jpg",
+    "original_info": {
+     "height": 1920,
+     "width": 1080
+    },
+    "type": "video",
+    "video_info": {
+     "duration_millis": 15300,
+     "variants": [
+      {
+       "content_type": "application/x-mpegURL",
+       "url": "https://video.twimg.com/amplify_video/2121763328888291328/pl/3x_yhstSmBgFw3Dv.m3u8?tag=29&v=cfc"
+      },
+      {
+       "bitrate": 632000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/320x568/pdVTjGmnl6Bv44eu.mp4?tag=29"
+      },
+      {
+       "bitrate": 950000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/480x852/PfOyb9komfuWUDwo.mp4?tag=29"
+      },
+      {
+       "bitrate": 2176000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/720x1280/vkU6VPURmW-JJOO2.mp4?tag=29"
+      },
+      {
+       "bitrate": 10368000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/1080x1920/nCzGfgvJVWeH-7nt.mp4?tag=29"
+      }
+     ]
+    }
+   },
+   {
+    "additional_media_info": {
+     "monetizable": false
+    },
+    "allow_download_status": {
+     "allow_download": true
+    },
+    "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/2",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "id_str": "2121763328926113792",
+    "indices": [
+     40,
+     63
+    ],
+    "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121763328926113792/img/G9ZR1qpFbodKqizt.jpg",
+    "original_info": {
+     "height": 1920,
+     "width": 1080
+    },
+    "type": "video",
+    "video_info": {
+     "duration_millis": 11166,
+     "variants": [
+      {
+       "content_type": "application/x-mpegURL",
+       "url": "https://video.twimg.com/amplify_video/2121763328926113792/pl/YZLFTcmYYI13CwWL.m3u8?tag=29&v=cfc"
+      },
+      {
+       "bitrate": 632000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/320x568/FcglNlUnsKCkbYG8.mp4?tag=29"
+      },
+      {
+       "bitrate": 950000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/480x852/CZ66MzRJjNdwmO8Y.mp4?tag=29"
+      },
+      {
+       "bitrate": 2176000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/720x1280/9NmX9dnNzGPg8ZcI.mp4?tag=29"
+      },
+      {
+       "bitrate": 10368000,
+       "content_type": "video/mp4",
+       "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/1080x1920/wBkvosWd7sX46hDF.mp4?tag=29"
+      }
+     ]
+    }
+   }
+  ],
+  "rest_id": "2121763396190179414",
+  "url_entities": []
+ },
+ "quote": {
+  "__typename": "Tweet",
+  "core": {
+   "user_results": {
+    "result": {
+     "__typename": "User",
+     "avatar": {
+      "image_url": "https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg"
+     },
+     "core": {
+      "name": "Elon Musk",
+      "screen_name": "elonmusk"
+     }
+    }
+   }
+  },
+  "details": {
+   "cashtag_entities": [],
+   "created_at_ms": 1794729578000,
+   "display_text_range": [
+    0,
+    11
+   ],
+   "full_text": "5 years ago",
+   "hashtag_entities": [],
+   "smarttags": []
+  },
+  "legacy": {
+   "entities": {},
+   "lang": "en",
+   "quoted_status_permalink": {
+    "expanded": "https://twitter.com/cb_doge/status/2121750619816095753"
+   }
+  },
+  "media_entities2": [],
+  "quoted_tweet_results": {
+   "__typename": "TweetResults",
+   "rest_id": "2121750619816095753",
+   "result": {
+    "__typename": "Tweet",
+    "core": {
+     "user_results": {
+      "result": {
+       "__typename": "User",
+       "avatar": {
+        "image_url": "https://pbs.twimg.com/profile_images/1498070100393754625/C2V-fbll_normal.jpg"
+       },
+       "core": {
+        "name": "DogeDesigner",
+        "screen_name": "cb_doge"
+       }
+      }
+     }
+    },
+    "details": {
+     "cashtag_entities": [],
+     "created_at_ms": 1794699742000,
+     "display_text_range": [
+      0,
+      129
+     ],
+     "full_text": "Elon posted this in 2021.\n\nNow a Starship has returned from orbit straight into giant robot chopsticks.\n\nWhat a time to be alive. https://t.co/AYM2uDrSeg",
+     "hashtag_entities": [],
+     "smarttags": []
+    },
+    "legacy": {
+     "entities": {
+      "media": [
+       {
+        "expanded_url": "https://x.com/cb_doge/status/2121750619816095753/video/1"
+       }
+      ]
+     },
+     "lang": "en",
+     "possibly_sensitive": false
+    },
+    "media_entities2": [
+     {
+      "additional_media_info": {
+       "monetizable": false
+      },
+      "expanded_url": "https://x.com/cb_doge/status/2121750619816095753/video/1",
+      "ext_media_availability": {
+       "status": "Available"
+      },
+      "ext_playlists": [],
+      "id_str": "2121750115656536064",
+      "indices": [
+       130,
+       153
+      ],
+      "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121750115656536064/img/ZFBIgfivMXxrQz3P.jpg",
+      "original_info": {
+       "height": 1000,
+       "width": 1000
+      },
+      "type": "video",
+      "video_info": {
+       "duration_millis": 73640,
+       "variants": [
+        {
+         "content_type": "application/x-mpegURL",
+         "url": "https://video.twimg.com/amplify_video/2121750115656536064/pl/KyV06cunR03B3D8n.m3u8?tag=29"
+        },
+        {
+         "bitrate": 432000,
+         "content_type": "video/mp4",
+         "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/320x320/HOasE1fhaD24DYZO.mp4?tag=29"
+        },
+        {
+         "bitrate": 832000,
+         "content_type": "video/mp4",
+         "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/540x540/lLdGmNLGpvUQBK37.mp4?tag=29"
+        },
+        {
+         "bitrate": 1280000,
+         "content_type": "video/mp4",
+         "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/720x720/nmFUQp9hsNQMOK7p.mp4?tag=29"
+        },
+        {
+         "bitrate": 8768000,
+         "content_type": "video/mp4",
+         "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/1000x1000/aN36TaPFPP7rVkis.mp4?tag=29"
+        }
+       ]
+      }
+     }
+    ],
+    "rest_id": "2121750619816095753",
+    "url_entities": []
+   }
+  },
+  "rest_id": "2121875758704370144",
+  "url_entities": []
+ },
+ "note": {
+  "__typename": "Tweet",
+  "core": {
+   "user_results": {
+    "result": {
+     "__typename": "User",
+     "avatar": {
+      "image_url": "https://pbs.twimg.com/profile_images/1321163587679784960/0ZxKlEKB_normal.jpg"
+     },
+     "core": {
+      "name": "NASA",
+      "screen_name": "NASA"
+     }
+    }
+   }
+  },
+  "details": {
+   "cashtag_entities": [],
+   "created_at_ms": 1794245851000,
+   "display_text_range": [
+    0,
+    263
+   ],
+   "full_text": "We had a great time at MAX POWER — and made a lot of news!\n\nWe're recruiting a new class of astronauts, making major advancements on the Moon Base, and challenging students to a $1 million design competition. Catch up with everything we announced at the festival: https://t.co/4lmhzUDKWn",
+   "hashtag_entities": [],
+   "smarttags": []
+  },
+  "legacy": {
+   "entities": {
+    "media": [
+     {
+      "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/1"
+     },
+     {
+      "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/2"
+     },
+     {
+      "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/3"
+     },
+     {
+      "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/4"
+     }
+    ]
+   },
+   "lang": "en",
+   "possibly_sensitive": false
+  },
+  "media_entities2": [
+   {
+    "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/1",
+    "ext_alt_text": "A plane trail forms a large heart shape in the blue sky to the left of the giant, cube-shaped Vehicle Assembly Building at NASA's Kennedy Space Center.",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "features": {},
+    "id_str": "2119846813851078656",
+    "indices": [
+     264,
+     287
+    ],
+    "media_url_https": "https://pbs.twimg.com/media/HWs1ch3WUAAyaeo.jpg",
+    "original_info": {
+     "height": 4480,
+     "width": 6720
+    },
+    "type": "photo"
+   },
+   {
+    "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/2",
+    "ext_alt_text": "A child wearing a green hoodie and virtual-reality goggles holds his right arm out, with the controller in his hand at the very front of the photo. Two adults watch behind him.",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "features": {},
+    "id_str": "2119846822604615680",
+    "indices": [
+     264,
+     287
+    ],
+    "media_url_https": "https://pbs.twimg.com/media/HWs1dCeWsAAl3Fo.jpg",
+    "original_info": {
+     "height": 1366,
+     "width": 2048
+    },
+    "type": "photo"
+   },
+   {
+    "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/3",
+    "ext_alt_text": "NASA astronaut (and Artemis III commander) Randy Bresnik, wearing his blue flight suit, sits atop a vintage blue-green Corvette and waves to the camera.",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "features": {},
+    "id_str": "2119846835502096384",
+    "indices": [
+     264,
+     287
+    ],
+    "media_url_https": "https://pbs.twimg.com/media/HWs1dyhWoAAgNlr.jpg",
+    "original_info": {
+     "height": 5464,
+     "width": 8192
+    },
+    "type": "photo"
+   },
+   {
+    "expanded_url": "https://x.com/NASA/status/2119846862286930036/photo/4",
+    "ext_alt_text": "Two planes, seen from a distance, fly in parallel, their trails forming white lines behind them. A bright Sun shines to their left.",
+    "ext_media_availability": {
+     "status": "Available"
+    },
+    "ext_playlists": [],
+    "features": {},
+    "id_str": "2119846854389116928",
+    "indices": [
+     264,
+     287
+    ],
+    "media_url_https": "https://pbs.twimg.com/media/HWs1e44XsAAZhkB.jpg",
+    "original_info": {
+     "height": 4480,
+     "width": 6720
+    },
+    "type": "photo"
+   }
+  ],
+  "note_tweet": {
+   "is_expandable": true,
+   "note_tweet_results": {
+    "id": "Tm90ZVR3ZWV0UmVzdWx0czoyMTE5ODQ2ODYyMTc3ODU3NTM2",
+    "result": {
+     "__typename": "NoteTweet",
+     "entity_set": {
+      "hashtags": [],
+      "smarttags": [],
+      "symbols": [],
+      "urls": [
+       {
+        "display_url": "nasa.gov/general/max-po…",
+        "expanded_url": "https://www.nasa.gov/general/max-power-nasas-inaugural-aerospace-expo-ignites-americas-future/",
+        "indices": [
+         264,
+         287
+        ],
+        "url": "https://t.co/GrfsD9eADy"
+       }
+      ],
+      "user_mentions": []
+     },
+     "id": "Tm90ZVR3ZWV0OjIxMTk4NDY4NjIxNzc4NTc1MzY=",
+     "text": "We had a great time at MAX POWER — and made a lot of news!\n\nWe're recruiting a new class of astronauts, making major advancements on the Moon Base, and challenging students to a $1 million design competition. Catch up with everything we announced at the festival: https://t.co/GrfsD9eADy"
+    }
+   }
+  },
+  "rest_id": "2119846862286930036",
+  "url_entities": []
+ },
+ "timeline": {
+  "data": {
+   "threaded_conversation_with_injections_v2": {
+    "instructions": [
+     {
+      "entries": [
+       {
+        "content": {
+         "itemContent": {
+          "tweet_results": {
+           "__typename": "TweetResults",
+           "rest_id": "1770888775830262034",
+           "result": {
+            "__typename": "Tweet",
+            "core": {
+             "user_results": {
+              "result": {
+               "__typename": "User",
+               "avatar": {
+                "image_url": "https://pbs.twimg.com/profile_images/2068802435938689025/Iqb-7nQc_normal.jpg"
+               },
+               "core": {
+                "name": "𝕯𝖊𝖗𝖇𝖊𝖉𝖊𝖗",
+                "screen_name": "derbederdusler"
+               }
+              }
+             }
+            },
+            "details": {
+             "cashtag_entities": [],
+             "created_at_ms": 1711047760000,
+             "display_text_range": [
+              5,
+              5
+             ],
+             "full_text": "@jack https://t.co/j0vbZrENcJ",
+             "hashtag_entities": [],
+             "smarttags": []
+            },
+            "legacy": {
+             "entities": {
+              "media": [
+               {
+                "expanded_url": "https://x.com/derbederdusler/status/1770888775830262034/photo/1"
+               }
+              ]
+             },
+             "lang": "qme",
+             "possibly_sensitive": false
+            },
+            "media_entities2": [
+             {
+              "expanded_url": "https://x.com/derbederdusler/status/1770888775830262034/photo/1",
+              "ext_media_availability": {
+               "status": "Available"
+              },
+              "ext_playlists": [],
+              "features": {},
+              "id_str": "1770888772571316224",
+              "indices": [
+               6,
+               29
+              ],
+              "media_url_https": "https://pbs.twimg.com/media/GJN19MHXQAAeNDq.jpg",
+              "original_info": {
+               "height": 786,
+               "width": 1080
+              },
+              "type": "photo"
+             }
+            ],
+            "rest_id": "1770888775830262034",
+            "url_entities": []
+           }
+          }
+         }
+        }
+       },
+       {
+        "content": {
+         "itemContent": {
+          "tweet_results": {
+           "__typename": "TweetResults",
+           "rest_id": "2121763396190179414",
+           "result": {
+            "__typename": "Tweet",
+            "core": {
+             "user_results": {
+              "result": {
+               "__typename": "User",
+               "avatar": {
+                "image_url": "https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg"
+               },
+               "core": {
+                "name": "Elon Musk",
+                "screen_name": "elonmusk"
+               }
+              }
+             }
+            },
+            "details": {
+             "cashtag_entities": [],
+             "created_at_ms": 1794702788000,
+             "display_text_range": [
+              0,
+              39
+             ],
+             "full_text": "Some phone videos I took from the tower https://t.co/kxiSkIvoHQ",
+             "hashtag_entities": [],
+             "smarttags": []
+            },
+            "legacy": {
+             "entities": {
+              "media": [
+               {
+                "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/1"
+               },
+               {
+                "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/2"
+               }
+              ]
+             },
+             "lang": "en",
+             "possibly_sensitive": false
+            },
+            "media_entities2": [
+             {
+              "additional_media_info": {
+               "monetizable": false
+              },
+              "allow_download_status": {
+               "allow_download": true
+              },
+              "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/1",
+              "ext_media_availability": {
+               "status": "Available"
+              },
+              "ext_playlists": [],
+              "id_str": "2121763328888291328",
+              "indices": [
+               40,
+               63
+              ],
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121763328888291328/img/Z16sUanKjIFhZ3D9.jpg",
+              "original_info": {
+               "height": 1920,
+               "width": 1080
+              },
+              "type": "video",
+              "video_info": {
+               "duration_millis": 15300,
+               "variants": [
+                {
+                 "content_type": "application/x-mpegURL",
+                 "url": "https://video.twimg.com/amplify_video/2121763328888291328/pl/3x_yhstSmBgFw3Dv.m3u8?tag=29&v=cfc"
+                },
+                {
+                 "bitrate": 632000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/320x568/pdVTjGmnl6Bv44eu.mp4?tag=29"
+                },
+                {
+                 "bitrate": 950000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/480x852/PfOyb9komfuWUDwo.mp4?tag=29"
+                },
+                {
+                 "bitrate": 2176000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/720x1280/vkU6VPURmW-JJOO2.mp4?tag=29"
+                },
+                {
+                 "bitrate": 10368000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328888291328/vid/avc1/1080x1920/nCzGfgvJVWeH-7nt.mp4?tag=29"
+                }
+               ]
+              }
+             },
+             {
+              "additional_media_info": {
+               "monetizable": false
+              },
+              "allow_download_status": {
+               "allow_download": true
+              },
+              "expanded_url": "https://x.com/elonmusk/status/2121763396190179414/video/2",
+              "ext_media_availability": {
+               "status": "Available"
+              },
+              "ext_playlists": [],
+              "id_str": "2121763328926113792",
+              "indices": [
+               40,
+               63
+              ],
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121763328926113792/img/G9ZR1qpFbodKqizt.jpg",
+              "original_info": {
+               "height": 1920,
+               "width": 1080
+              },
+              "type": "video",
+              "video_info": {
+               "duration_millis": 11166,
+               "variants": [
+                {
+                 "content_type": "application/x-mpegURL",
+                 "url": "https://video.twimg.com/amplify_video/2121763328926113792/pl/YZLFTcmYYI13CwWL.m3u8?tag=29&v=cfc"
+                },
+                {
+                 "bitrate": 632000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/320x568/FcglNlUnsKCkbYG8.mp4?tag=29"
+                },
+                {
+                 "bitrate": 950000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/480x852/CZ66MzRJjNdwmO8Y.mp4?tag=29"
+                },
+                {
+                 "bitrate": 2176000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/720x1280/9NmX9dnNzGPg8ZcI.mp4?tag=29"
+                },
+                {
+                 "bitrate": 10368000,
+                 "content_type": "video/mp4",
+                 "url": "https://video.twimg.com/amplify_video/2121763328926113792/vid/avc1/1080x1920/wBkvosWd7sX46hDF.mp4?tag=29"
+                }
+               ]
+              }
+             }
+            ],
+            "rest_id": "2121763396190179414",
+            "url_entities": []
+           }
+          }
+         }
+        }
+       },
+       {
+        "content": {
+         "itemContent": {
+          "tweet_results": {
+           "__typename": "TweetResults",
+           "rest_id": "2121875758704370144",
+           "result": {
+            "__typename": "Tweet",
+            "core": {
+             "user_results": {
+              "result": {
+               "__typename": "User",
+               "avatar": {
+                "image_url": "https://pbs.twimg.com/profile_images/2103567689515954176/aR-Kjpp4_normal.jpg"
+               },
+               "core": {
+                "name": "Elon Musk",
+                "screen_name": "elonmusk"
+               }
+              }
+             }
+            },
+            "details": {
+             "cashtag_entities": [],
+             "created_at_ms": 1794729578000,
+             "display_text_range": [
+              0,
+              11
+             ],
+             "full_text": "5 years ago",
+             "hashtag_entities": [],
+             "smarttags": []
+            },
+            "legacy": {
+             "entities": {},
+             "lang": "en",
+             "quoted_status_permalink": {
+              "expanded": "https://twitter.com/cb_doge/status/2121750619816095753"
+             }
+            },
+            "media_entities2": [],
+            "quoted_tweet_results": {
+             "__typename": "TweetResults",
+             "rest_id": "2121750619816095753",
+             "result": {
+              "__typename": "Tweet",
+              "core": {
+               "user_results": {
+                "result": {
+                 "__typename": "User",
+                 "avatar": {
+                  "image_url": "https://pbs.twimg.com/profile_images/1498070100393754625/C2V-fbll_normal.jpg"
+                 },
+                 "core": {
+                  "name": "DogeDesigner",
+                  "screen_name": "cb_doge"
+                 }
+                }
+               }
+              },
+              "details": {
+               "cashtag_entities": [],
+               "created_at_ms": 1794699742000,
+               "display_text_range": [
+                0,
+                129
+               ],
+               "full_text": "Elon posted this in 2021.\n\nNow a Starship has returned from orbit straight into giant robot chopsticks.\n\nWhat a time to be alive. https://t.co/AYM2uDrSeg",
+               "hashtag_entities": [],
+               "smarttags": []
+              },
+              "legacy": {
+               "entities": {
+                "media": [
+                 {
+                  "expanded_url": "https://x.com/cb_doge/status/2121750619816095753/video/1"
+                 }
+                ]
+               },
+               "lang": "en",
+               "possibly_sensitive": false
+              },
+              "media_entities2": [
+               {
+                "additional_media_info": {
+                 "monetizable": false
+                },
+                "expanded_url": "https://x.com/cb_doge/status/2121750619816095753/video/1",
+                "ext_media_availability": {
+                 "status": "Available"
+                },
+                "ext_playlists": [],
+                "id_str": "2121750115656536064",
+                "indices": [
+                 130,
+                 153
+                ],
+                "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2121750115656536064/img/ZFBIgfivMXxrQz3P.jpg",
+                "original_info": {
+                 "height": 1000,
+                 "width": 1000
+                },
+                "type": "video",
+                "video_info": {
+                 "duration_millis": 73640,
+                 "variants": [
+                  {
+                   "content_type": "application/x-mpegURL",
+                   "url": "https://video.twimg.com/amplify_video/2121750115656536064/pl/KyV06cunR03B3D8n.m3u8?tag=29"
+                  },
+                  {
+                   "bitrate": 432000,
+                   "content_type": "video/mp4",
+                   "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/320x320/HOasE1fhaD24DYZO.mp4?tag=29"
+                  },
+                  {
+                   "bitrate": 832000,
+                   "content_type": "video/mp4",
+                   "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/540x540/lLdGmNLGpvUQBK37.mp4?tag=29"
+                  },
+                  {
+                   "bitrate": 1280000,
+                   "content_type": "video/mp4",
+                   "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/720x720/nmFUQp9hsNQMOK7p.mp4?tag=29"
+                  },
+                  {
+                   "bitrate": 8768000,
+                   "content_type": "video/mp4",
+                   "url": "https://video.twimg.com/amplify_video/2121750115656536064/vid/avc1/1000x1000/aN36TaPFPP7rVkis.mp4?tag=29"
+                  }
+                 ]
+                }
+               }
+              ],
+              "rest_id": "2121750619816095753",
+              "url_entities": []
+             }
+            },
+            "rest_id": "2121875758704370144",
+            "url_entities": []
+           }
+          }
+         }
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

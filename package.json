@@ -1,0 +1,12 @@
+{
+  "name": "tweet-vault",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "icons": "python tools/make_icons.py"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.0.0"
+  }
+}
