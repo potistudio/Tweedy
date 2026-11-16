@@ -125,6 +125,8 @@
 	const saving = new Set();
 	// 単押しから保存開始までの間 (フォルダ一覧の取得中)。押した瞬間から保存中の表示にするために使う。
 	const pressing = new Set();
+	// 保存の解除 (deleteTweet) の応答待ち。
+	const removing = new Set();
 	const buttons = new Map();
 	const pendingIds = new Set();
 	// 保存処理中にポップオーバーで選択されたフォルダ・タグ。保存完了後に updateTweet で反映する。
@@ -161,7 +163,7 @@
 			try {
 				const res = await bg("getStatus", { ids: chunk });
 				chunk.forEach((id, j) => {
-					if (saving.has(id) || (generation.get(id) || 0) !== before[j]) return;
+					if (saving.has(id) || removing.has(id) || (generation.get(id) || 0) !== before[j]) return;
 					status.set(id, res[id] || null);
 					paint(id);
 				});
@@ -207,7 +209,7 @@
 		if (prev === st) return;
 		btn.dataset.state = st;
 		const label =
-			st === "saved" ? "Vault に保存済み (クリックで編集)" : st === "saving" ? "Vault に保存中…" : "Vault に保存";
+			st === "saved" ? "Vault に保存済み (クリックで解除)" : st === "saving" ? "Vault に保存中…" : "Vault に保存";
 		btn.title = label;
 		btn.setAttribute("aria-label", label);
 
@@ -640,16 +642,44 @@
 		}
 		if (popover.isOpenFor(btn)) {
 			const failed = popover.isFailed();
+			const removeFailed = popover.isRemoveFailed();
 			popover.close();
-			// 保存失敗の表示中にボタンを押した場合は保存を再試行する。
+			// 保存失敗・解除失敗の表示中にボタンを押した場合は、失敗した操作を再試行する。
 			if (failed && !saving.has(id) && !status.get(id)) await quickSave(btn, id);
+			else if (removeFailed && !removing.has(id) && status.get(id)) await unsave(btn, id);
 			return;
 		}
+		// 解除の応答待ちの間は、保存と解除の要求が前後しないようクリックを受け付けない。
+		if (removing.has(id)) return;
 		if (status.get(id)) {
-			popover.open(btn, id);
+			await unsave(btn, id);
 			return;
 		}
 		await quickSave(btn, id);
+	}
+
+	// 保存済みの単押し: 保存を解除する。応答を待たずに未保存の表示 (フタが開く) へ切り替え、失敗時は元に戻す。
+	async function unsave(btn, id) {
+		const prev = status.get(id);
+		removing.add(id);
+		// 解除前に送信済みの updateTweet の応答で保存済み表示へ戻らないよう、送信番号を進める。
+		updateSeq.set(id, (updateSeq.get(id) || 0) + 1);
+		setStatus(id, null);
+		try {
+			await bg("deleteTweet", { id });
+			// 同じツイートの別のボタンから開いたポップオーバーが、削除済みのツイートを表示し続けないよう閉じる。
+			popover.closeFor(id);
+		} catch (err) {
+			setStatus(id, prev);
+			requestStatus(id);
+			// 解除の失敗はポップオーバーで知らせる。
+			if (btn.isConnected && !popover.isOpenFor(btn)) popover.open(btn, id);
+			popover.onRemoveError(id, err);
+		} finally {
+			removing.delete(id);
+			// 解除中に送られた getStatus は削除の確定前の内容を返す場合があるため、その応答を破棄させる。
+			generation.set(id, (generation.get(id) || 0) + 1);
+		}
 	}
 
 	/* ---------- 長押し・右クリックで Goo メニュー (保存先フォルダの選択) ---------- */
@@ -764,7 +794,7 @@
 
 	// 取得を待つ間にボタンが外れた・別ツイートに再利用された・保存が始まった場合は続けない。
 	function stillValid(btn, id) {
-		return btn.isConnected && btn.dataset.id === id && !saving.has(id);
+		return btn.isConnected && btn.dataset.id === id && !saving.has(id) && !removing.has(id);
 	}
 
 	// 単押し: 前回使ったフォルダへすぐ保存する。結果は保存ボタンの開閉で示す。
@@ -1047,6 +1077,14 @@
 			);
 		}
 
+		function isRemoveFailed() {
+			return !!cur && !!cur.removeFailed && !!cur.error;
+		}
+
+		function closeFor(id) {
+			if (cur && cur.id === id) close();
+		}
+
 		function close() {
 			cur = null;
 			if (root) root.hidden = true;
@@ -1282,6 +1320,14 @@
 			render();
 		}
 
+		// 保存済みボタンの単押しによる解除に失敗したとき。保存済みのまま、理由のみ表示する。
+		function onRemoveError(id, err) {
+			if (!cur || cur.id !== id) return;
+			cur.removeFailed = true;
+			cur.error = `保存を解除できませんでした: ${err?.message || err} (保存ボタンをもう一度押すと再試行します)`;
+			render();
+		}
+
 		function onError(id, err) {
 			if (!cur || cur.id !== id) return;
 			cur.phase = "error";
@@ -1311,6 +1357,17 @@
 			if (cur) reposition();
 		});
 
-		return { open, close, isOpenFor, isFailed, onSaved, onError, onMoveError };
+		return {
+			open,
+			close,
+			closeFor,
+			isOpenFor,
+			isFailed,
+			isRemoveFailed,
+			onSaved,
+			onError,
+			onMoveError,
+			onRemoveError,
+		};
 	})();
 })();
