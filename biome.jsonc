@@ -1,0 +1,92 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
+	"files": {
+		"ignoreUnknown": true,
+		"includes": ["**", "!**/package.json"]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"formatter": {
+		"enabled": true,
+		"indentWidth": 4,
+		"lineWidth": 120
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn",
+				// 既存の CSS は意図した詳細度と順序で組んでおり、無関係なセレクタ同士でも
+				// 警告になるため、このルールは無効にする
+				"noDescendingSpecificity": "off"
+			},
+			"a11y": {
+				// Biome 2.6 で recommended に追加されたルール。既存 UI のマークアップ見直しは
+				// 別途行うため、移行時点では warn にして CI を止めない。
+				"noStaticElementInteractions": "warn",
+				"useKeyWithClickEvents": "warn",
+				"useSemanticElements": "warn",
+				"noNoninteractiveTabindex": "warn",
+				"useFocusableInteractive": "warn"
+			},
+			"complexity": {
+				"useLiteralKeys": "off"
+			}
+		}
+	},
+	// scripts/ は tsc の対象外なので、未定義の変数参照だけはここで落とす（#335）
+	"overrides": [
+		{
+			"includes": ["scripts/**"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUndeclaredVariables": "error"
+					}
+				}
+			}
+		},
+		{
+			// 画像クロップの role=application と、キーボードでスクロールする実況タイムラインは
+			// tabindex が必要なため、この2ファイルだけルールを無効にする
+			"includes": ["src/lib/components/ImageCropper.svelte", "src/lib/components/room/LiveRoomView.svelte"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noNoninteractiveTabindex": "off"
+					}
+				}
+			}
+		}
+	],
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"html": {
+		"experimentalFullSupportEnabled": true,
+		"formatter": {
+			"enabled": true
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	}
+}
