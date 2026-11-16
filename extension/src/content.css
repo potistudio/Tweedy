@@ -39,17 +39,327 @@
 }
 
 .tvault-btn svg {
-	width: 19px;
-	height: 19px;
+	width: 22px;
+	height: 22px;
 	pointer-events: none;
 }
 
+.tvault-btn[data-state="saving"],
 .tvault-btn[data-state="saved"] {
 	color: rgb(29, 155, 240);
 }
 
-.tvault-btn[data-state="saving"] svg {
+/* フタを閉じるアニメーションが終わっても保存処理が続いている間は点滅させる */
+.tvault-btn[data-state="saving"]:not([data-anim]) svg {
 	animation: tvault-pulse 0.9s ease-in-out infinite;
+}
+
+/*
+ * 箱を閉じるアニメーション (押した瞬間に再生、全体 1 秒)
+ *   0–120ms    押した瞬間からイーズアウトで箱が 4px 沈み、同時にフタが閉まる。下限でフタが閉まり切る。
+ *   120–1000ms 沈んだ反動でばねのように戻り、上下に減衰振動しながら元の位置に落ち着く。
+ *              (固有振動数 3.6Hz・減衰比 0.28 のばねを 20ms ごとに標本化したキーフレーム)
+ *   160–360ms  反動で戻り始めて間もなく、チェックマークが現れる。
+ * フタの transform は SVG の transform 属性と同じ座標系（viewBox 単位、原点 0 0）で記述する。
+ * 開いたフタ = 閉じたフタを 1 下げ、左下角 (3, 10) を中心に -10deg 回転させた位置。
+ */
+.tvault-btn[data-anim="close"] svg {
+	/* 箱の底 (viewBox の y≈20.2) を中心につぶす */
+	transform-origin: 50% 84%;
+	animation: tvault-box-close 1s both;
+}
+
+.tvault-btn[data-anim="close"] .tvault-lid {
+	animation: tvault-lid-close 0.12s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+/* フタのキーフレームは viewBox の原点を基準に書くため、回転の中心を明示する */
+.tvault-btn[data-anim] .tvault-lid {
+	transform-box: view-box;
+	transform-origin: 0 0;
+}
+
+.tvault-btn[data-anim="close"] .tvault-paint {
+	animation: tvault-fill 0.12s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+.tvault-btn[data-anim="close"] .tvault-check {
+	animation: tvault-draw 0.2s cubic-bezier(0.2, 0, 0.2, 1) 0.16s both;
+}
+
+.tvault-btn[data-anim="open"] .tvault-lid {
+	animation: tvault-lid-open 0.28s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+/* .tvault-lid は .tvault-paint も兼ねるため、transform と塗りの 2 つのアニメーションを並べて指定する */
+.tvault-btn[data-anim="close"] .tvault-lid.tvault-paint {
+	animation:
+		tvault-lid-close 0.12s cubic-bezier(0.2, 0.7, 0.4, 1) both,
+		tvault-fill 0.12s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+.tvault-btn[data-anim="open"] .tvault-paint {
+	animation: tvault-unfill 0.28s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+.tvault-btn[data-anim="open"] .tvault-lid.tvault-paint {
+	animation:
+		tvault-lid-open 0.28s cubic-bezier(0.3, 0, 0.2, 1) both,
+		tvault-unfill 0.28s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+/* 線画 → 塗りつぶし (閉じるとき) と、その逆 (開くとき) */
+@keyframes tvault-fill {
+	from {
+		stroke-width: 1.9;
+		fill-opacity: 0;
+	}
+	to {
+		stroke-width: 0;
+		fill-opacity: 1;
+	}
+}
+
+@keyframes tvault-unfill {
+	from {
+		stroke-width: 0;
+		fill-opacity: 1;
+	}
+	to {
+		stroke-width: 1.9;
+		fill-opacity: 0;
+	}
+}
+
+@keyframes tvault-box-close {
+	0% {
+		transform: translateY(0px) scale(1, 1);
+		animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+	}
+	12% {
+		transform: translateY(4px) scale(1.04, 0.95);
+		animation-timing-function: linear;
+	}
+	14% {
+		transform: translateY(3.63px) scale(1.036, 0.955);
+		animation-timing-function: linear;
+	}
+	16% {
+		transform: translateY(2.7px) scale(1.027, 0.966);
+		animation-timing-function: linear;
+	}
+	18% {
+		transform: translateY(1.49px) scale(1.015, 0.981);
+		animation-timing-function: linear;
+	}
+	20% {
+		transform: translateY(0.29px) scale(1.003, 0.996);
+		animation-timing-function: linear;
+	}
+	22% {
+		transform: translateY(-0.69px) scale(0.993, 1.009);
+		animation-timing-function: linear;
+	}
+	24% {
+		transform: translateY(-1.33px) scale(0.987, 1.017);
+		animation-timing-function: linear;
+	}
+	26% {
+		transform: translateY(-1.59px) scale(0.984, 1.02);
+		animation-timing-function: linear;
+	}
+	28% {
+		transform: translateY(-1.51px) scale(0.985, 1.019);
+		animation-timing-function: linear;
+	}
+	30% {
+		transform: translateY(-1.18px) scale(0.988, 1.015);
+		animation-timing-function: linear;
+	}
+	32% {
+		transform: translateY(-0.71px) scale(0.993, 1.009);
+		animation-timing-function: linear;
+	}
+	34% {
+		transform: translateY(-0.22px) scale(0.998, 1.003);
+		animation-timing-function: linear;
+	}
+	36% {
+		transform: translateY(0.19px) scale(1.002, 0.998);
+		animation-timing-function: linear;
+	}
+	38% {
+		transform: translateY(0.49px) scale(1.005, 0.994);
+		animation-timing-function: linear;
+	}
+	40% {
+		transform: translateY(0.63px) scale(1.006, 0.992);
+		animation-timing-function: linear;
+	}
+	42% {
+		transform: translateY(0.62px) scale(1.006, 0.992);
+		animation-timing-function: linear;
+	}
+	44% {
+		transform: translateY(0.51px) scale(1.005, 0.994);
+		animation-timing-function: linear;
+	}
+	46% {
+		transform: translateY(0.33px) scale(1.003, 0.996);
+		animation-timing-function: linear;
+	}
+	48% {
+		transform: translateY(0.13px) scale(1.001, 0.998);
+		animation-timing-function: linear;
+	}
+	50% {
+		transform: translateY(-0.04px) scale(1, 1.001);
+		animation-timing-function: linear;
+	}
+	52% {
+		transform: translateY(-0.17px) scale(0.998, 1.002);
+		animation-timing-function: linear;
+	}
+	54% {
+		transform: translateY(-0.24px) scale(0.998, 1.003);
+		animation-timing-function: linear;
+	}
+	56% {
+		transform: translateY(-0.25px) scale(0.997, 1.003);
+		animation-timing-function: linear;
+	}
+	58% {
+		transform: translateY(-0.22px) scale(0.998, 1.003);
+		animation-timing-function: linear;
+	}
+	60% {
+		transform: translateY(-0.15px) scale(0.998, 1.002);
+		animation-timing-function: linear;
+	}
+	62% {
+		transform: translateY(-0.07px) scale(0.999, 1.001);
+		animation-timing-function: linear;
+	}
+	64% {
+		transform: translateY(0px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	66% {
+		transform: translateY(0.06px) scale(1.001, 0.999);
+		animation-timing-function: linear;
+	}
+	68% {
+		transform: translateY(0.09px) scale(1.001, 0.999);
+		animation-timing-function: linear;
+	}
+	70% {
+		transform: translateY(0.1px) scale(1.001, 0.999);
+		animation-timing-function: linear;
+	}
+	72% {
+		transform: translateY(0.09px) scale(1.001, 0.999);
+		animation-timing-function: linear;
+	}
+	74% {
+		transform: translateY(0.07px) scale(1.001, 0.999);
+		animation-timing-function: linear;
+	}
+	76% {
+		transform: translateY(0.04px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	78% {
+		transform: translateY(0.01px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	80% {
+		transform: translateY(-0.02px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	82% {
+		transform: translateY(-0.03px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	84% {
+		transform: translateY(-0.04px) scale(1, 1.001);
+		animation-timing-function: linear;
+	}
+	86% {
+		transform: translateY(-0.04px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	88% {
+		transform: translateY(-0.03px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	90% {
+		transform: translateY(-0.02px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	92% {
+		transform: translateY(-0px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	94% {
+		transform: translateY(0.01px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	96% {
+		transform: translateY(0.01px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	98% {
+		transform: translateY(0.02px) scale(1, 1);
+		animation-timing-function: linear;
+	}
+	100% {
+		transform: translateY(0px) scale(1, 1);
+	}
+}
+
+@keyframes tvault-lid-close {
+	from {
+		transform: translate(3px, 10px) rotate(-10deg) translate(-3px, -9px);
+	}
+	to {
+		transform: translate(3px, 9px) rotate(0deg) translate(-3px, -9px);
+	}
+}
+
+@keyframes tvault-lid-open {
+	from {
+		transform: translate(3px, 9px) rotate(0deg) translate(-3px, -10px);
+	}
+	to {
+		transform: translate(3px, 10px) rotate(-10deg) translate(-3px, -10px);
+	}
+}
+
+@keyframes tvault-draw {
+	from {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tvault-btn[data-anim] svg,
+	.tvault-btn[data-anim] .tvault-lid,
+	.tvault-btn[data-anim] .tvault-paint,
+	.tvault-btn[data-anim] .tvault-lid.tvault-paint,
+	.tvault-btn[data-anim] .tvault-check,
+	.tvault-btn[data-state="saving"]:not([data-anim]) svg {
+		animation: none;
+	}
+
+	/* 点滅しない代わりに、保存中は薄く表示して保存済みと区別する */
+	.tvault-btn[data-state="saving"] svg {
+		opacity: 0.5;
+	}
 }
 
 @keyframes tvault-pulse {

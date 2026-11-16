@@ -1,9 +1,9 @@
 /*
  * 保存ボタンから登録フォルダを液体の泡として広げる Goo メニュー (ISOLATED world の content script)。
  * designbookmark.com の Goo Menu を移植したもの。ばねの硬さ・減衰は元の tokens.css と同じ値を使う。
- * 泡はばねで飛び出し、フォルダを選ぶと泡が戻って中央のボタンがトースト (保存結果) に変形する。
+ * 泡はばねで飛び出し、フォルダを選ぶと泡が戻って中央のボタンも縮んで消える。保存結果は保存ボタン自体の表示で示す。
  * 元の goo フィルタ (ぼかしで泡同士を融合させる) は使わず、輪郭はくっきりのままにする。
- * content.js から TVaultGoo.open / close / setToast / dismiss / isOpenFor を呼ぶ。描画は Shadow DOM 内で行う。
+ * content.js から TVaultGoo.open / close / isOpenFor / hoverAt / releaseAt を呼ぶ。描画は Shadow DOM 内で行う。
  */
 (() => {
 	if (globalThis.TVaultGoo) return;
@@ -13,11 +13,9 @@
 		out: [230, 15], // --goo-out: 泡が飛び出す
 		in: [520, 34], // --goo-in: 泡が戻る
 		release: [300, 12], // --goo-release: ドラッグを離して元の位置へ
-		toast: [260, 17], // --goo-toast: ボタンがトーストに変形する
 		pop: [520, 16], // 中央ボタンの拡大縮小
 		width: [300, 20], // 中央ボタンの幅
 		rot: [320, 20], // + が × に回る
-		toastEnd: [320, 22], // トーストがボタンへ戻る
 		follow: [900, 50], // --spring-follow: ドラッグ中の泡
 		bubOpen: [300, 14],
 		bubClose: [420, 30],
@@ -25,7 +23,6 @@
 		bubInit: [420, 22],
 	};
 	const STAGGER = 0.045; // --goo-stagger: 45ms
-	const TOAST_SEC = 1.2; // --goo-toast-ms: 2600ms
 
 	/* ---------- 寸法 (px) ---------- */
 	const MS = 36; // 中央ボタン (保存ボタン 34px をわずかに覆う大きさ)
@@ -53,22 +50,19 @@
 	const svg = (p, sw = 1.9) =>
 		`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 	const ICON_PLUS = svg('<path d="M12 5v14M5 12h14"/>', 2.2);
-	const ICON_CHECK = svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 2.4);
-	const ICON_ALERT = svg('<path d="M12 6.5v7M12 17.5v.01"/>', 2.6);
 
 	const CSS = `
     :host { all: initial; }
     .root {
       position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 2147483645; pointer-events: none;
       font: 700 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
-      --accent: #1d9bf0; --danger: #f4212e; --on-accent: #fff;
+      --accent: #1d9bf0; --on-accent: #fff;
       --radius: 8px; /* ポップオーバーのフォルダ行・入力欄と同じ角丸 */
       -webkit-font-smoothing: antialiased; user-select: none;
     }
     .root[hidden] { display: none; }
     .layer, .ui { position: absolute; }
-    .blob { position: absolute; left: 0; top: 0; border-radius: var(--radius); background: var(--accent); will-change: transform; transition: background-color .2s; }
-    .blob.err { background: var(--danger); }
+    .blob { position: absolute; left: 0; top: 0; border-radius: var(--radius); background: var(--accent); will-change: transform; }
     .gbtn {
       all: unset; position: absolute; left: 0; top: 0; box-sizing: border-box;
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -80,20 +74,8 @@
     .bub .nm { overflow: hidden; text-overflow: ellipsis; }
     .bub.last::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
     .main { height: ${MS}px; overflow: hidden; }
-    .plus { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; display: grid; place-items: center; transition: opacity .2s; }
-    .plus svg, .toast svg { width: 100%; height: 100%; display: block; }
-    .main.toasting .plus { opacity: 0; }
-    .toast {
-      display: flex; align-items: center; gap: 6px; white-space: nowrap; letter-spacing: -.01em;
-      opacity: 0; filter: blur(4px); transform: translateY(6px);
-      transition: opacity .15s, filter .15s, transform .2s;
-    }
-    .toast .ic { width: 18px; height: 18px; flex: none; display: grid; place-items: center; }
-    .toast .busy { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: tvault-goo-pulse .9s ease-in-out infinite; }
-    .toast .nm { display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-    .main.toasting .toast { opacity: 1; filter: none; transform: none; transition: opacity .35s .08s, filter .35s .08s, transform .5s cubic-bezier(.16,1,.3,1) .08s; }
-    @keyframes tvault-goo-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
-    @media (prefers-reduced-motion: reduce) { .toast .busy { animation: none; } }
+    .plus { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; display: grid; place-items: center; }
+    .plus svg { width: 100%; height: 100%; display: block; }
   `;
 
 	let host = null;
@@ -103,16 +85,10 @@
 	let uiEl = null;
 	let mainBlob = null;
 	let mainBtn = null;
-	let toastEl = null;
 
-	let cur = null; // { anchor, dir, onPick, onToastClick }
+	let cur = null; // { anchor, dir, perCol, onPick, picked }
 	let bubs = [];
 	let open = false;
-	let toasting = false;
-	let toastPending = false; // フォルダを選んでからトーストが出るまでの間
-	let toastMsg = null;
-	let toastKey = "";
-	let toastTimer = null;
 	let box = { l: 0, t: 0, w: 0, h: 0 };
 	const main = { sc: S(0, ...SPRING.pop), w: S(MS, ...SPRING.width), rot: S(0, ...SPRING.rot), ox: S(0) };
 
@@ -125,10 +101,6 @@
 		timers.push(t);
 		kick();
 		return t;
-	};
-	const cancel = (t) => {
-		const i = timers.indexOf(t);
-		if (i > -1) timers.splice(i, 1);
 	};
 
 	let raf = 0;
@@ -161,15 +133,15 @@
 		else raf = requestAnimationFrame(loop);
 	}
 
+	// 中央ボタンが縮みきり、泡も全て中央へ戻ったら止める。
 	function idle() {
 		return (
 			!open &&
-			!toasting &&
-			!toastPending &&
 			!timers.length &&
 			main.sc.t === 0 &&
 			main.sc.x < 0.02 &&
-			Math.abs(main.sc.v) < 0.05
+			Math.abs(main.sc.v) < 0.05 &&
+			bubs.every((b) => !b.pending && Math.hypot(b.x.x, b.y.x) < 1)
 		);
 	}
 
@@ -250,21 +222,13 @@
 		mainBtn = document.createElement("button");
 		mainBtn.type = "button";
 		mainBtn.className = "gbtn main";
-		mainBtn.innerHTML = `<span class="plus">${ICON_PLUS}</span><span class="toast" aria-live="polite"></span>`;
-		toastEl = mainBtn.querySelector(".toast");
+		mainBtn.innerHTML = `<span class="plus">${ICON_PLUS}</span>`;
 		layerEl.appendChild(mainBlob);
 		uiEl.appendChild(mainBtn);
 
 		mainBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
-			if (!cur) return;
-			if (toasting || toastPending) {
-				const cb = cur.onToastClick;
-				dismiss(cur.anchor);
-				cb?.();
-			} else if (open) {
-				close(e.detail === 0);
-			}
+			if (cur && open) close(e.detail === 0);
 		});
 
 		// シャドウ DOM 内のキー操作がページのキーボードショートカットとして処理されないよう伝播を止める。
@@ -474,7 +438,7 @@
 			} else if (e.type === "pointerup" && open) {
 				b.s.t = 1;
 				b.s.v += 4;
-				pick(b, 0.08, 0.32);
+				pick(b, 0.08);
 			}
 		};
 		btn.addEventListener("pointerup", up);
@@ -482,7 +446,7 @@
 		btn.addEventListener("keydown", (e) => {
 			if (!open || (e.key !== "Enter" && e.key !== " ")) return;
 			e.preventDefault();
-			pick(b, 0, 0.3);
+			pick(b, 0, true);
 		});
 		btn.addEventListener("click", (e) => e.stopPropagation());
 	}
@@ -491,14 +455,16 @@
 		b.pending = { t: delay, pos, k, c };
 	}
 
-	function pick(b, closeAt, toastAt) {
-		if (!cur || toastPending) return;
+	// closeAt 秒後に泡を戻す。泡が戻るまでの間に重ねて選ばれても、最初の 1 回のみ扱う。
+	// 中央ボタンは保存ボタンの開閉アニメーションを隠さないよう、選んだ時点で縮め始める。
+	// refocus: キーボードで選んだ場合、消える泡からフォーカスを保存ボタンへ戻す。
+	function pick(b, closeAt, refocus = false) {
+		if (!cur || !open || cur.picked) return;
 		const c = cur;
-		toastPending = true;
-		toastMsg = null;
-		toastKey = "";
-		after(closeAt, () => close(false));
-		after(toastAt, showToast);
+		c.picked = true;
+		tune(main.sc, ...SPRING.in);
+		main.sc.t = 0;
+		after(closeAt, () => close(refocus));
 		c.onPick?.(b.folder);
 	}
 
@@ -506,17 +472,10 @@
 
 	function hardHide() {
 		timers.length = 0;
-		toastTimer = null;
 		open = false;
-		toasting = false;
-		toastPending = false;
-		toastMsg = null;
-		toastKey = "";
 		cur = null;
 		if (!rootEl) return;
 		rootEl.hidden = true;
-		mainBtn.classList.remove("toasting");
-		mainBlob.classList.remove("err");
 		for (const b of bubs) {
 			b.blob.remove();
 			b.btn.remove();
@@ -526,13 +485,13 @@
 
 	/*
 	 * anchor: 保存ボタン。folders: [{ id, name }]。currentId: 前回のフォルダ (点で示す)。
-	 * onPick(folder): フォルダが選ばれたとき。onToastClick(): トーストを押したとき。
+	 * onPick(folder): フォルダが選ばれたとき。
 	 * focus: キーボードで開いた場合に最初の泡へフォーカスする。
 	 */
-	function openMenu(anchor, { folders, currentId, verb = "に保存", onPick, onToastClick, focus } = {}) {
+	function openMenu(anchor, { folders, currentId, verb = "に保存", onPick, focus } = {}) {
 		ensure();
 		hardHide();
-		cur = { anchor, dir: -1, perCol: 1, onPick, onToastClick };
+		cur = { anchor, dir: -1, perCol: 1, onPick, picked: false };
 		rootEl.hidden = false;
 		build(folders || [], currentId, verb);
 		main.w.x = main.w.t = MS;
@@ -581,125 +540,13 @@
 		kick();
 	}
 
-	// 泡が戻った後、トーストが無ければ中央ボタンも縮めて消す。
+	// 泡が戻った後、中央ボタンも縮めて消す。
 	function vanishAfter(sec) {
 		after(sec, () => {
-			if (!cur || open || toasting || toastPending) return;
+			if (!cur || open) return;
 			tune(main.sc, ...SPRING.in);
 			main.sc.t = 0;
 		});
-	}
-
-	/* ---------- トースト ---------- */
-
-	function showToast() {
-		toastPending = false;
-		if (!cur) return;
-		toasting = true;
-		mainBtn.classList.add("toasting");
-		main.sc.v -= 2;
-		applyToast();
-	}
-
-	function applyToast() {
-		const msg = toastMsg || { state: "busy", text: "保存中…" };
-		const key = `${msg.state}\u0000${msg.name || ""}\u0000${msg.text}`;
-		if (key === toastKey) return;
-		toastKey = key;
-
-		toastEl.textContent = "";
-		const ic = document.createElement("span");
-		ic.className = "ic";
-		if (msg.state === "done") ic.innerHTML = ICON_CHECK;
-		else if (msg.state === "error") ic.innerHTML = ICON_ALERT;
-		else ic.innerHTML = '<span class="busy"></span>';
-		mainBlob.classList.toggle("err", msg.state === "error");
-		const txt = document.createElement("span");
-		if (msg.name) {
-			const nm = document.createElement("span");
-			nm.className = "nm";
-			nm.textContent = msg.name;
-			txt.append("「", nm, `」${msg.text}`);
-		} else {
-			txt.append(msg.text);
-		}
-		toastEl.append(ic, txt);
-		const label = `${msg.name ? `「${msg.name}」` : ""}${msg.text}`;
-		mainBtn.setAttribute("aria-label", `${label} (押すとフォルダ・タグを編集)`);
-
-		toastEl.style.position = "absolute";
-		const tw = toastEl.scrollWidth;
-		toastEl.style.position = "";
-		tune(main.w, ...SPRING.toast);
-		main.w.t = tw + 28;
-		// トーストが画面からはみ出さないよう、中央ボタンを横にずらす。
-		const r = cur.anchor.getBoundingClientRect();
-		const cx = r.left + r.width / 2;
-		const half = main.w.t / 2;
-		tune(main.ox, ...SPRING.toast);
-		main.ox.t = clamp(0, EDGE + half - cx, innerWidth - EDGE - half - cx);
-		updateBox();
-
-		if (toastTimer) cancel(toastTimer);
-		toastTimer = msg.state === "busy" ? null : after(TOAST_SEC, endToast);
-		kick();
-	}
-
-	function endToast() {
-		toastTimer = null;
-		if (!toasting) return;
-		toasting = false;
-		mainBtn.classList.remove("toasting");
-		tune(main.w, ...SPRING.toastEnd);
-		main.w.t = MS;
-		main.ox.t = 0;
-		main.sc.v -= 1.5;
-		vanishAfter(0.25);
-	}
-
-	// msg: { state: "busy" | "done" | "error", name?: フォルダ名, text }。トーストはフォルダ選択から少し遅れて出るため、先に届いた内容は保持する。
-	function setToast(anchor, msg) {
-		if (!cur || cur.anchor !== anchor) return;
-		toastMsg = msg;
-		if (toasting) applyToast();
-	}
-
-	// トーストを閉じる (保存失敗でポップオーバーを開くときなど)。
-	function dismiss(anchor) {
-		if (!cur || cur.anchor !== anchor) return;
-		if (open) close(false);
-		if (toastPending) {
-			toastPending = false;
-			timers.length = 0;
-			vanishAfter(0);
-		}
-		if (toasting) {
-			if (toastTimer) cancel(toastTimer);
-			endToast();
-		}
-	}
-
-	/*
-	 * 泡を出さずに、ボタンをその場でトーストに変形させる (単押しで保存したとき)。
-	 * 内容は setToast で後から差し替える。
-	 */
-	function toastOnly(anchor, { onToastClick } = {}) {
-		ensure();
-		hardHide();
-		cur = { anchor, dir: -1, onPick: null, onToastClick };
-		rootEl.hidden = false;
-		build([], null, "");
-		main.w.x = main.w.t = MS;
-		main.w.v = 0;
-		main.ox.x = main.ox.t = main.ox.v = 0;
-		tune(main.sc, ...SPRING.pop);
-		main.sc.x = 0.3;
-		main.sc.v = 0;
-		main.sc.t = 1;
-		main.rot.x = main.rot.t = main.rot.v = 0;
-		showToast();
-		render();
-		kick();
 	}
 
 	/*
@@ -733,7 +580,7 @@
 		if (!b) return false;
 		b.s.t = 1;
 		b.s.v += 4;
-		pick(b, 0.08, 0.32);
+		pick(b, 0.08);
 		return true;
 	}
 
@@ -767,10 +614,7 @@
 
 	globalThis.TVaultGoo = {
 		open: openMenu,
-		toast: toastOnly,
 		close,
-		setToast,
-		dismiss,
 		isOpenFor,
 		hoverAt,
 		releaseAt,

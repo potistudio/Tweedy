@@ -39,10 +39,14 @@
 	const CACHE_MAX = 4000;
 	const BTN_CLASS = "tvault-btn";
 
+	// 未保存: フタが左端を支点に開いた箱。保存中・保存済み: フタが閉じた塗りつぶしの箱。
+	// .tvault-lid / .tvault-paint / .tvault-check は content.css の開閉アニメーションの対象。
+	// .tvault-paint は静止時は見た目に影響しない塗り (fill-opacity 0) や線 (stroke-width 0) を持ち、
+	// アニメーション中に線画と塗りつぶしを入れ替える。保存済みの横線は塗りと同色のため静止時は見えない。
 	const ICON_OUTLINE =
-		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="5.5" rx="1.2"/><path d="M4.8 9v9.8c0 .9.7 1.7 1.7 1.7h11c.9 0 1.7-.8 1.7-1.7V9"/><path d="M9.8 13h4.4"/></svg>';
+		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect class="tvault-lid tvault-paint" x="3" y="4.5" width="18" height="5.5" rx="1.2" fill="currentColor" fill-opacity="0" transform="rotate(-10 3 10)"/><path class="tvault-paint" d="M4.8 10h14.4v8.8c0 .9-.8 1.7-1.7 1.7h-11c-.9 0-1.7-.8-1.7-1.7z" fill="currentColor" fill-opacity="0"/><path d="M9.8 14h4.4"/></svg>';
 	const ICON_SAVED =
-		'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="5.5" rx="1.2" fill="currentColor"/><path d="M4.8 10.2h14.4v8.6c0 .9-.8 1.7-1.7 1.7h-11c-1 0-1.7-.8-1.7-1.7z" fill="currentColor"/><path d="M9 14.9l2.1 2 4-4.2" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+		'<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linejoin="round"><rect class="tvault-lid tvault-paint" x="3" y="3.5" width="18" height="5.5" rx="1.2"/><path class="tvault-paint" d="M4.8 10.2h14.4v8.6c0 .9-.8 1.7-1.7 1.7h-11c-1 0-1.7-.8-1.7-1.7z"/></g><path d="M9.8 14h4.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path class="tvault-check" pathLength="1" d="M9 14.9l2.1 2 4-4.2" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 	/* ---------- ツイートキャッシュ ---------- */
 
@@ -119,6 +123,8 @@
 	// value が null は未保存、{ folderId, tags } は保存済み、キー無しは未取得を表す。
 	const status = new Map();
 	const saving = new Set();
+	// 単押しから保存開始までの間 (フォルダ一覧の取得中)。押した瞬間から保存中の表示にするために使う。
+	const pressing = new Set();
 	const buttons = new Map();
 	const pendingIds = new Set();
 	// 保存処理中にポップオーバーで選択されたフォルダ・タグ。保存完了後に updateTweet で反映する。
@@ -173,18 +179,75 @@
 	}
 
 	function stateOf(id) {
-		if (saving.has(id)) return "saving";
+		if (saving.has(id) || pressing.has(id)) return "saving";
 		return status.get(id) ? "saved" : "unsaved";
 	}
 
-	function setButtonState(btn, st) {
-		if (btn.dataset.state === st) return;
+	// 開閉アニメーションの長さ (content.css の tvault-box-close と tvault-lid-open の長さ)。
+	// data-anim は animationend で外し、タブが非表示などで animationend が届かない場合に備えてタイマーでも外す。
+	const ANIM_MS = { close: 1000, open: 280 };
+	const ANIM_END = new Set(["tvault-box-close", "tvault-lid-open"]);
+
+	function onButtonAnimationEnd(e) {
+		if (!ANIM_END.has(e.animationName)) return;
+		const btn = e.currentTarget;
+		clearTimeout(animTimers.get(btn));
+		delete btn.dataset.anim;
+	}
+	const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+	const animTimers = new WeakMap();
+	const closeStarted = new WeakMap();
+
+	// 未保存は開いた箱、保存中・保存済みは閉じた箱で表す。
+	const iconOf = (st) => (st === "unsaved" ? "open" : "closed");
+
+	// animate: false のとき開閉アニメーションを再生しない (別ツイートへの付け替えなど)。
+	function setButtonState(btn, st, animate = true) {
+		const prev = btn.dataset.state;
+		if (prev === st) return;
 		btn.dataset.state = st;
-		btn.innerHTML = st === "saved" ? ICON_SAVED : ICON_OUTLINE;
 		const label =
 			st === "saved" ? "Vault に保存済み (クリックで編集)" : st === "saving" ? "Vault に保存中…" : "Vault に保存";
 		btn.title = label;
 		btn.setAttribute("aria-label", label);
+
+		// 保存中 → 保存済みのように見た目が変わらない遷移では SVG を差し替えず、再生中のアニメーションを続ける。
+		const icon = iconOf(st);
+		if (prev && iconOf(prev) === icon && btn.firstElementChild) {
+			// 別ツイートへの付け替えでは、前のツイートのアニメーションを引き継がない。
+			if (!animate) {
+				clearTimeout(animTimers.get(btn));
+				delete btn.dataset.anim;
+			}
+			return;
+		}
+
+		// 押した瞬間 (未保存 → 保存中) にフタを閉じ、保存失敗・削除で閉じた箱 → 開いた箱になるときにフタを開く。
+		// 初回描画や状態取得による未保存 → 保存済みでは再生しない。
+		let anim = "";
+		if (animate && !reduceMotion.matches) {
+			if (prev === "unsaved" && st === "saving") anim = "close";
+			// 箱が沈んでいる最中 (閉じ始めから 250ms 以内) に保存に失敗した場合は、途中の位置から飛ぶため開くアニメーションは再生しない。
+			else if (
+				prev &&
+				icon === "open" &&
+				!(btn.dataset.anim === "close" && performance.now() - (closeStarted.get(btn) || 0) < 250)
+			)
+				anim = "open";
+		}
+		clearTimeout(animTimers.get(btn));
+		if (anim) {
+			btn.dataset.anim = anim;
+			if (anim === "close") closeStarted.set(btn, performance.now());
+			// data-anim が残ると、ボタンが DOM に再挿入されたときにアニメーションが再生し直されるため、終了後に外す。
+			animTimers.set(
+				btn,
+				setTimeout(() => delete btn.dataset.anim, ANIM_MS[anim] + 500),
+			);
+		} else {
+			delete btn.dataset.anim;
+		}
+		btn.innerHTML = icon === "closed" ? ICON_SAVED : ICON_OUTLINE;
 	}
 
 	function paint(id) {
@@ -502,6 +565,7 @@
 		btn.addEventListener("pointerdown", onButtonPointerDown);
 		btn.addEventListener("contextmenu", onButtonContextMenu);
 		btn.addEventListener("touchmove", onButtonTouchMove, { passive: false });
+		btn.addEventListener("animationend", onButtonAnimationEnd);
 		if (!buttons.has(id)) buttons.set(id, new Set());
 		buttons.get(id).add(btn);
 		setButtonState(btn, stateOf(id));
@@ -513,7 +577,7 @@
 		btn.dataset.id = newId;
 		if (!buttons.has(newId)) buttons.set(newId, new Set());
 		buttons.get(newId).add(btn);
-		setButtonState(btn, stateOf(newId));
+		setButtonState(btn, stateOf(newId), false);
 		if (!status.has(newId)) requestStatus(newId);
 	}
 
@@ -571,7 +635,6 @@
 		}
 		// 保存処理中のクリックでポップオーバーを閉じると完了・失敗の表示先が無くなるため、開くのみとする。
 		if (saving.has(id)) {
-			goo.dismiss(btn);
 			if (!popover.isOpenFor(btn)) popover.open(btn, id);
 			return;
 		}
@@ -704,21 +767,24 @@
 		return btn.isConnected && btn.dataset.id === id && !saving.has(id);
 	}
 
-	// トーストを押すと、続けてタグなどを編集できるようポップオーバーを開く。
-	function toastClick(btn, id) {
-		return () => {
-			if (btn.isConnected) popover.open(btn, id);
-		};
-	}
-
-	// 単押し: 前回使ったフォルダへすぐ保存し、ボタンをトーストに変形させる。
+	// 単押し: 前回使ったフォルダへすぐ保存する。結果は保存ボタンの開閉で示す。
 	async function quickSave(btn, id) {
-		const data = await loadFolders(btn);
-		if (!data || !stillValid(btn, id) || status.get(id)) return;
+		if (pressing.has(id)) return;
+		pressing.add(id);
+		paint(id);
+		let data;
+		try {
+			data = await loadFolders(btn);
+		} finally {
+			pressing.delete(id);
+		}
+		if (!data || !stillValid(btn, id) || status.get(id)) {
+			paint(id);
+			return;
+		}
 		const folder = data.folders.find((f) => f.id === data.lastFolderId) || data.folders[0];
 		popover.close();
-		goo.toast(btn, { onToastClick: toastClick(btn, id) });
-		save(id, btn.closest("article"), btn, folder, data.folders);
+		save(id, btn.closest("article"), btn, folder);
 	}
 
 	// 長押し: 登録フォルダを泡として横に広げる。未保存なら選んだフォルダへ保存し、保存済みならそのフォルダへ移動する。
@@ -737,19 +803,14 @@
 			onPick(folder) {
 				chrome.storage.local.set({ lastFolderId: folder.id }).catch(() => {});
 				if (status.get(id)) moveTo(id, btn, folder);
-				else if (!saving.has(id)) save(id, btn.closest("article"), btn, folder, folders);
+				else if (!saving.has(id)) save(id, btn.closest("article"), btn, folder);
 			},
-			onToastClick: toastClick(btn, id),
 		});
 	}
 
 	async function moveTo(id, btn, folder) {
 		const prev = status.get(id);
-		if (prev.folderId === folder.id) {
-			goo.setToast(btn, { state: "done", name: folder.name, text: "に保存済みです" });
-			return;
-		}
-		goo.setToast(btn, { state: "busy", name: folder.name, text: "へ移動中…" });
+		if (prev.folderId === folder.id) return;
 		// ポップオーバーでの編集と同じく、最後に送った要求の応答のみを反映する。
 		const seq = (updateSeq.get(id) || 0) + 1;
 		updateSeq.set(id, seq);
@@ -758,24 +819,17 @@
 			const res = await bg("updateTweet", { id, folderId: folder.id });
 			if (updateSeq.get(id) !== seq) return;
 			setStatus(id, { folderId: res.folderId, tags: res.tags });
-			goo.setToast(btn, { state: "done", name: folder.name, text: "へ移動しました" });
-		} catch {
+		} catch (err) {
 			if (updateSeq.get(id) !== seq) return;
 			setStatus(id, prev);
 			requestStatus(id);
-			goo.setToast(btn, { state: "error", name: folder.name, text: "へ移動できませんでした" });
+			// 移動の失敗はポップオーバーで知らせる。
+			if (btn.isConnected && !popover.isOpenFor(btn)) popover.open(btn, id);
+			popover.onMoveError(id, folder, err);
 		}
 	}
 
-	function savedToast(saved, folders) {
-		const name = folders.find((f) => f.id === saved.folderId)?.name;
-		if (saved.existed) return { state: "done", name, text: name ? "に保存済みです" : "既に保存済みです" };
-		if (saved.mediaFailed)
-			return { state: "done", name, text: `に保存 (メディア ${saved.mediaFailed} 件は未取得)` };
-		return { state: "done", name, text: name ? "に保存しました" : "保存しました" };
-	}
-
-	async function save(id, article, btn, folder, folders) {
+	async function save(id, article, btn, folder) {
 		saving.add(id);
 		paint(id);
 		let saved = null;
@@ -788,7 +842,6 @@
 				folderChanged: false,
 				tagsChanged: false,
 			});
-			goo.setToast(btn, { state: "busy", name: folder.name, text: "に保存中…" });
 			const tweet = await resolveTweet(id, article);
 			saved = await bg("saveTweet", { tweet, folderId: folder.id, tags: [] });
 			// 既に保存済みだった場合、draft は既存のフォルダ・タグを知らない状態で編集されているため破棄し、
@@ -811,17 +864,12 @@
 		}
 		if (saved) {
 			setStatus(id, { folderId: saved.folderId, tags: saved.tags });
-			// saveTweet 成功後の updateTweet で失敗した場合は、トーストではなくポップオーバーで未反映である旨を表示する。
-			if (failure && !popover.isOpenFor(btn)) {
-				goo.dismiss(btn);
-				if (btn.isConnected) popover.open(btn, id);
-			}
-			if (!failure) goo.setToast(btn, savedToast(saved, folders));
+			// saveTweet 成功後の updateTweet で失敗した場合や、メディアの一部を取得できなかった場合は、ポップオーバーで知らせる。
+			if ((failure || saved.mediaFailed) && !popover.isOpenFor(btn) && btn.isConnected) popover.open(btn, id);
 			popover.onSaved(id, saved, failure);
 		} else {
 			paint(id);
-			// 失敗はトーストを閉じ、ポップオーバーで理由と再試行の方法を示す。
-			goo.dismiss(btn);
+			// 失敗はポップオーバーで理由と再試行の方法を示す。
 			if (btn.isConnected && !popover.isOpenFor(btn)) popover.open(btn, id);
 			popover.onError(id, failure || new Error("保存できませんでした"));
 		}
@@ -990,7 +1038,8 @@
 					reposition();
 				},
 				(err) => {
-					if (cur === opened) {
+					// 先に表示した移動失敗などのエラーは上書きしない。
+					if (cur === opened && !cur.error) {
 						cur.error = err.message;
 						render();
 					}
@@ -1226,6 +1275,13 @@
 			render();
 		}
 
+		// 泡メニューからのフォルダ移動に失敗したとき。保存済みのまま、理由のみ表示する。
+		function onMoveError(id, folder, err) {
+			if (!cur || cur.id !== id) return;
+			cur.error = `「${folder.name}」へ移動できませんでした: ${err?.message || err}`;
+			render();
+		}
+
 		function onError(id, err) {
 			if (!cur || cur.id !== id) return;
 			cur.phase = "error";
@@ -1255,6 +1311,6 @@
 			if (cur) reposition();
 		});
 
-		return { open, close, isOpenFor, isFailed, onSaved, onError };
+		return { open, close, isOpenFor, isFailed, onSaved, onError, onMoveError };
 	})();
 })();
