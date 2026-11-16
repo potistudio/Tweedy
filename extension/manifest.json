@@ -1,17 +1,17 @@
 {
 	"manifest_version": 3,
-	"name": "Tweet Vault",
+	"name": "Tweedy",
 	"version": "1.0.0",
-	"description": "X (Twitter) のツイートをメディアごと IndexedDB に保存し、フォルダとタグで整理・一覧できるブックマーク代替拡張機能",
+	"description": " Tidy Tweets",
 	"minimum_chrome_version": "116",
 	"permissions": ["storage", "unlimitedStorage"],
-	"host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://*.twimg.com/*"],
+	"host_permissions": ["https://x.com/*", "https://*.twimg.com/*"],
 	"background": {
 		"service_worker": "src/background.js",
 		"type": "module"
 	},
 	"action": {
-		"default_title": "Tweet Vault を開く",
+		"default_title": "Tweedyを開く",
 		"default_icon": {
 			"16": "icons/icon16.png",
 			"32": "icons/icon32.png",
@@ -27,13 +27,13 @@
 	},
 	"content_scripts": [
 		{
-			"matches": ["https://x.com/*", "https://twitter.com/*"],
+			"matches": ["https://x.com/*"],
 			"js": ["src/parse.js", "src/inject.js"],
 			"run_at": "document_start",
 			"world": "MAIN"
 		},
 		{
-			"matches": ["https://x.com/*", "https://twitter.com/*"],
+			"matches": ["https://x.com/*"],
 			"js": ["src/content.js"],
 			"css": ["src/content.css"],
 			"run_at": "document_start"
@@ -42,7 +42,7 @@
 	"web_accessible_resources": [
 		{
 			"resources": ["src/parse.js"],
-			"matches": ["https://x.com/*", "https://twitter.com/*"]
+			"matches": ["https://x.com/*"]
 		}
 	]
 }
