@@ -554,6 +554,53 @@ a:hover {
 	border-radius: 4px;
 	pointer-events: none;
 }
+.m-dl {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.65);
+	color: #fff;
+	cursor: pointer;
+	opacity: 0;
+	/* 透明な間はクリックを下の画像へ通し、見えないボタンでダウンロードが始まらないようにする。 */
+	pointer-events: none;
+	transition: opacity 0.15s;
+}
+.m-item:hover .m-dl,
+.m-dl:focus-visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+.m-dl:hover {
+	background: rgba(0, 0, 0, 0.85);
+}
+@media (hover: none) {
+	.m-dl {
+		top: 4px;
+		right: 4px;
+		width: 26px;
+		height: 26px;
+		opacity: 1;
+		pointer-events: auto;
+	}
+}
+.m-dl svg,
+.lb-download svg {
+	width: 18px;
+	height: 18px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2.2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
 .m-missing {
 	display: grid;
 	place-items: center;
@@ -760,6 +807,7 @@ dialog::backdrop {
 	object-fit: contain;
 }
 .lb-close,
+.lb-download,
 .lb-nav {
 	position: absolute;
 	border: 0;
@@ -773,6 +821,7 @@ dialog::backdrop {
 	line-height: 1;
 }
 .lb-close:hover,
+.lb-download:hover,
 .lb-nav:hover {
 	background: rgba(255, 255, 255, 0.25);
 }
@@ -780,6 +829,19 @@ dialog::backdrop {
 	top: 16px;
 	right: 16px;
 	font-size: 18px;
+}
+.lb-download {
+	top: 16px;
+	right: 72px;
+	display: grid;
+	place-items: center;
+}
+.lb-download[hidden] {
+	display: none;
+}
+.lb-download svg {
+	width: 22px;
+	height: 22px;
 }
 .lb-nav {
 	top: 50%;

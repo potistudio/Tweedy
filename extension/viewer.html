@@ -99,6 +99,18 @@
 
 		<div class="lightbox" id="lightbox" hidden>
 			<button type="button" class="lb-close" data-lb="close" aria-label="閉じる">✕</button>
+			<button
+				type="button"
+				class="lb-download"
+				id="lbDownload"
+				hidden
+				data-lb="download"
+				aria-label="この画像をダウンロード"
+			>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" />
+				</svg>
+			</button>
 			<button type="button" class="lb-nav prev" data-lb="prev" aria-label="前の画像">‹</button>
 			<img id="lbImg" alt="">
 			<button type="button" class="lb-nav next" data-lb="next" aria-label="次の画像">›</button>

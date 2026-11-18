@@ -51,6 +51,7 @@ const els = {
 	importFile: $("#importFile"),
 	lightbox: $("#lightbox"),
 	lbImg: $("#lbImg"),
+	lbDownload: $("#lbDownload"),
 };
 
 /* ---------- utilities ---------- */
@@ -879,7 +880,7 @@ async function hydrate(card) {
 
 	const rows = new Map(mediaRows.map((m) => [m.key, m]));
 	const metas = new Map([...(t.media || []), ...((t.quote && t.quote.media) || [])].map((m) => [m.key, m]));
-	// ライトボックスの画像列と「X で見る」のリンク先は、本体と引用ツイートで分ける。
+	// ライトボックスの画像列と「X で見る」のリンク先、保存時のファイル名は、本体と引用ツイートで分ける。
 	const photosByOwner = { main: [], quote: [] };
 	for (const slot of card.querySelectorAll(".m-item")) {
 		const meta = metas.get(slot.dataset.key);
@@ -924,10 +925,78 @@ async function retryMedia(id, btn) {
 	}
 }
 
+/* ---------- media download ---------- */
+
+const MIME_EXT = {
+	"image/jpeg": "jpg",
+	"image/png": "png",
+	"image/webp": "webp",
+	"image/gif": "gif",
+	"video/mp4": "mp4",
+	"video/webm": "webm",
+};
+
+// インポートしたデータ由来の URL から実行可能ファイルの拡張子が付かないよう、画像・動画の拡張子に限定する。
+const MEDIA_EXT_RE = /^(jpe?g|png|webp|gif|avif|heic|mp4|m4v|mov|webm)$/;
+
+// 拡張子は blob の MIME 型、URL の format クエリ、URL パスの拡張子、メディア種別の順に決める。
+function mediaExt(blob, meta) {
+	const mime = String(blob.type).split(";")[0].trim().toLowerCase();
+	if (MIME_EXT[mime]) return MIME_EXT[mime];
+	const sub = /^(image|video)\/([a-z0-9]+)$/.exec(mime)?.[2];
+	if (sub && MEDIA_EXT_RE.test(sub)) return sub;
+	try {
+		const u = new URL(meta.url);
+		const format = (u.searchParams.get("format") || "").toLowerCase();
+		if (MEDIA_EXT_RE.test(format)) return format;
+		const pathExt = (/\.([a-z0-9]+)$/i.exec(u.pathname)?.[1] || "").toLowerCase();
+		if (MEDIA_EXT_RE.test(pathExt)) return pathExt;
+	} catch {
+		/* URL を持たないメタデータ */
+	}
+	return meta.type === "photo" ? "jpg" : "mp4";
+}
+
+// ファイル名は `<ユーザー名>_<ツイート ID>_<連番>.<拡張子>` とする。インポートしたデータ由来の文字列を含むため、英数字と _ - 以外は _ に置き換える。
+function mediaFileName(t, meta, blob) {
+	const user = String((t.author && t.author.screenName) || "tweet").replace(/[^\w-]/g, "_") || "tweet";
+	const id = String(t.id || "").replace(/\D/g, "") || "unknown";
+	const index = Number.parseInt(String(meta.key).split(":").pop(), 10) || 0;
+	return `${user}_${id}_${index + 1}.${mediaExt(blob, meta)}`;
+}
+
+function downloadButton(blob, name) {
+	const btn = h("button", {
+		type: "button",
+		class: "m-dl",
+		title: `ダウンロード: ${name}`,
+		"aria-label": `ダウンロード: ${name}`,
+	});
+	btn.append(downloadIcon());
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation();
+		downloadBlob(blob, name);
+	});
+	return btn;
+}
+
+function downloadIcon() {
+	const NS = "http://www.w3.org/2000/svg";
+	const svg = document.createElementNS(NS, "svg");
+	svg.setAttribute("viewBox", "0 0 24 24");
+	svg.setAttribute("aria-hidden", "true");
+	const path = document.createElementNS(NS, "path");
+	path.setAttribute("d", "M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14");
+	svg.append(path);
+	return svg;
+}
+
 function fillSlot(slot, meta, row, objectUrl, photos, t) {
 	slot.textContent = "";
-	const src = row && row.blob ? objectUrl(row.blob) : "";
+	const blob = row && row.blob ? row.blob : null;
+	const src = blob ? objectUrl(blob) : "";
 	const poster = row && row.posterBlob ? objectUrl(row.posterBlob) : safeHref(meta.posterUrl);
+	const fileName = blob ? mediaFileName(t, meta, blob) : "";
 
 	if (meta.type === "photo") {
 		const url = src || safeHref(meta.url);
@@ -935,11 +1004,12 @@ function fillSlot(slot, meta, row, objectUrl, photos, t) {
 			slot.append(h("div", { class: "m-missing" }, "画像を取得できませんでした"));
 			return;
 		}
-		const index = photos.push(url) - 1;
+		const index = photos.push({ src: url, blob, name: fileName }) - 1;
 		const img = h("img", { src: url, alt: "", loading: "lazy", decoding: "async" });
 		img.addEventListener("click", () => openLightbox(photos, index));
 		slot.append(img);
-		if (!src) slot.append(h("span", { class: "m-badge" }, "未保存"));
+		if (blob) slot.append(downloadButton(blob, fileName));
+		else slot.append(h("span", { class: "m-badge" }, "未保存"));
 		return;
 	}
 
@@ -989,6 +1059,7 @@ function fillSlot(slot, meta, row, objectUrl, photos, t) {
 		video.controls = true;
 	}
 	slot.append(video);
+	if (blob) slot.append(downloadButton(blob, fileName));
 	if (meta.type === "gif") slot.append(h("span", { class: "m-badge" }, "GIF"));
 	else if (!src) slot.append(h("span", { class: "m-badge" }, "未保存"));
 }
@@ -1037,6 +1108,7 @@ async function removeTweet(id) {
 
 /* ---------- lightbox ---------- */
 
+// list の各要素は { src, blob, name }。blob が null の画像 (未保存) はダウンロードボタンを隠す。
 const lb = { list: [], index: 0 };
 
 function openLightbox(list, index) {
@@ -1047,7 +1119,13 @@ function openLightbox(list, index) {
 }
 
 function showLightbox() {
-	els.lbImg.src = lb.list[lb.index] || "";
+	const item = lb.list[lb.index];
+	els.lbImg.src = (item && item.src) || "";
+	els.lbDownload.hidden = !(item && item.blob);
+	if (item && item.blob) {
+		els.lbDownload.title = `ダウンロード: ${item.name}`;
+		els.lbDownload.setAttribute("aria-label", `ダウンロード: ${item.name}`);
+	}
 	const multi = lb.list.length > 1;
 	els.lightbox.querySelector(".prev").hidden = !multi;
 	els.lightbox.querySelector(".next").hidden = !multi;
@@ -1056,11 +1134,22 @@ function showLightbox() {
 function stepLightbox(d) {
 	if (lb.list.length < 2) return;
 	lb.index = (lb.index + d + lb.list.length) % lb.list.length;
+	const hadFocus = document.activeElement === els.lbDownload;
 	showLightbox();
+	// フォーカス中のボタンが hidden になるとフォーカスが body へ移るため、閉じるボタンへ移す。
+	if (hadFocus && els.lbDownload.hidden) els.lightbox.querySelector(".lb-close").focus();
+}
+
+function downloadLightbox() {
+	const item = lb.list[lb.index];
+	if (item && item.blob) downloadBlob(item.blob, item.name);
 }
 
 function closeLightbox() {
 	els.lightbox.hidden = true;
+	// 閉じた後も blob を参照し続けないよう、画像列を破棄する。
+	lb.list = [];
+	lb.index = 0;
 	els.lbImg.removeAttribute("src");
 }
 
@@ -1068,6 +1157,7 @@ els.lightbox.addEventListener("click", (e) => {
 	const act = e.target.closest("[data-lb]")?.dataset.lb;
 	if (act === "prev") stepLightbox(-1);
 	else if (act === "next") stepLightbox(1);
+	else if (act === "download") downloadLightbox();
 	else if (act === "close" || e.target === els.lightbox) closeLightbox();
 });
 
